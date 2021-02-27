@@ -2,6 +2,7 @@ package com.goodatlas.audiorecord;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.AudioManager;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Base64;
 import android.util.Log;
@@ -29,6 +30,8 @@ public class RNAudioRecordModule extends ReactContextBaseJavaModule {
     private int audioSource;
 
     private AudioRecord recorder;
+    private AudioManager audioManager;
+
     private int bufferSize;
     private boolean isRecording;
 
@@ -45,6 +48,17 @@ public class RNAudioRecordModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "RNAudioRecord";
+    }
+
+    private void activateBluetoothSco() {
+        if (!audioManager.isBluetoothScoAvailableOffCall()) {
+            Log.e(TAG, "SCO ist not available, recording is not possible");
+            return;
+        }
+
+        if (!audioManager.isBluetoothScoOn()) {
+            audioManager.startBluetoothSco();
+        }
     }
 
     @ReactMethod
@@ -87,6 +101,10 @@ public class RNAudioRecordModule extends ReactContextBaseJavaModule {
         bufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
         int recordingBufferSize = bufferSize * 3;
         recorder = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, recordingBufferSize);
+
+        audioManager = (AudioManager) reactContext.getSystemService(ReactApplicationContext.AUDIO_SERVICE);
+
+        activateBluetoothSco();
     }
 
     @ReactMethod
